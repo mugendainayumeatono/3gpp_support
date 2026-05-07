@@ -21,30 +21,8 @@ cp download_3gpp_docs.py "$SKILL_NAME/scripts/"
 cp doc/3gpp_download_tool_guide.md "$SKILL_NAME/references/"
 cp doc/3gpp_scope_spider_guide.md "$SKILL_NAME/references/"
 
-# Create the required SKILL.md file
-cat <<EOF > "$SKILL_NAME/SKILL.md"
----
-name: $SKILL_NAME
-description: Expert assistant for retrieving and analyzing 3GPP Release 18 technical specifications using automated tools.
----
-
-# $SKILL_NAME
-
-## Instructions
-Act as a 3GPP technical specialist. Use the scripts in \`scripts/\` to fetch and query Release 18 (rel-18) documentation.
-
-### Workflow:
-1. **Tool Proficiency**: Study the guides in \`references/\` to master \`3gpp_spec_scope_spider.py\` (for discovery) and \`download_3gpp_docs.py\` (for retrieval).
-2. **Resource Management**:
-   - **Target**: Release 18 (rel-18).
-   - **Storage**: Use \`/tmp/rel-18\` as the local cache.
-   - **Persistence**: Verify if a file exists in the cache before downloading.
-   - **Throttling**: Strictly limit downloads to a single thread (1 thread).
-3. **Response Protocol**:
-   - Base all responses **solely** on the content of the retrieved 3GPP documents.
-   - Do not supplement with external data or assumptions.
-   - If the requested information is unavailable in the retrieved specs, respond with: "No relevant content found in the 3GPP reference documents."
-EOF
+# Copy the required SKILL.md file from doc folder
+cp doc/SKILL.md "$SKILL_NAME/SKILL.md"
 
 # Check if zip is installed
 if ! command -v zip &> /dev/null; then
