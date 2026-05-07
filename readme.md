@@ -15,52 +15,66 @@
 
 ---
 
-## 2. 快速上手：构建 .skill 文件
+## 2. 使用指南与示例
 
-项目提供了一套自动化工具，用于将代码、文档及指令封装成标准的 `.skill` 文件（基于 ZIP 格式），以便在支持的 AI 平台中快速部署。
+本节介绍如何直接使用项目工具进行协议检索，以及如何构建可部署的 AI Agent Skill。
 
-### 2.1 打包 Skill
-使用 `create_skill.sh` 脚本进行打包：
-- **智能打包 (默认行为)**：
-  ```bash
-  ./create_skill.sh
-  ```
-  脚本会自动检测 `doc/SKILL.md` 是否存在：
-  - 如果**不存在**：自动调用 `generate_SKILL-md.sh` 生成新文件。
-  - 如果**已存在**：直接使用现有文件，不再重复生成。
-- **强制重新生成并打包**：
-  ```bash
-  ./create_skill.sh -g
-  # 或
-  ./create_skill.sh --generate
-  ```
-  无论 `doc/SKILL.md` 是否存在，都会强制调用 Gemini 重新生成，并自动保留最多 2 个历史备份（`SKILL.md.1` 和 `SKILL.md.2`）。
+### 2.1 协议发现工具 (Discovery Tool)
+使用 `3gpp_spec_scope_spider.py` 获取协议系列的摘要信息，用于建立本地知识索引或提供给 AI 进行语义匹配。
 
-### 2.2 自动化指令优化
-`generate_SKILL-md.sh` 脚本依赖 Gemini CLI，它会读取 `doc/prompt.txt` 中的优化策略，通过 AI 自动更新 `doc/SKILL.md`，使其描述更符合 AI Agent 的理解偏好。
+*   **使用示例**：
+    ```bash
+    # 爬取 Rel-19（默认）38 系列协议的 Scope 摘要，并保存为 JSON
+    python3 3gpp_spec_scope_spider.py --series 38 --output 38_series_scopes.json
+    ```
+*   **期待结果**：
+    生成一个 `38_series_scopes.json` 文件。文件内容示例：
+    ```json
+    {
+      "38.101-1": "The present document establishes the minimum RF characteristics and minimum performance requirements for NR User Equipment (UE)...",
+      "38.211": "The present document describes the physical channels and modulation for NR..."
+    }
+    ```
+
+### 2.2 协议获取工具 (Retrieval Tool)
+使用 `download_3gpp_docs.py` 根据协议编号快速下载并解压文档正文。
+
+*   **使用示例**：
+    ```bash
+    # 下载 TS 38.101-1 协议并解压到指定目录
+    python3 download_3gpp_docs.py --spec 38.101-1 --output /tmp/rel-18
+    ```
+*   **期待结果**：
+    在 `/tmp/rel-18` 目录下你会看到解压后的内容：
+    - `38101-1-i00.zip` (原始包)
+    - `38101-1-i00.docx` (协议正文)
+
+### 2.3 构建 .skill 文件 (Packaging)
+使用 `create_skill.sh` 脚本将代码、文档及指令封装，以便在 AI 平台中部署。
+
+*   **使用示例**：
+    ```bash
+    # 智能打包：如果 SKILL.md 不存在则自动生成，存在则复用
+    ./create_skill.sh
+    
+    # 强制重新生成：调用 Gemini 优化指令后打包
+    ./create_skill.sh -g
+    ```
+*   **期待结果**：
+    在当前目录下生成 `3gpp_support.skill` 文件。该文件可以直接导入支持 Skill 机制的 AI 客户端。
 
 ---
 
 ## 3. 技术实现细节
 
-### 3.1 摘要自动化提取 (Scope Spider)
-为了实现高效的协议定位，`3gpp_spec_scope_spider.py` 采用了以下技术路径：
-- **在线发现**：实时获取 3GPP FTP 镜像 `latest` 路径下的最新链接。
-- **内存解压**：在内存中直接解压 `.zip` 及其内部的 `.docx` 文件，提取 `word/document.xml` 原始内容。
-- **正则匹配**：利用正则表达式精准定位 `1 Scope` 章节，剔除无关的元数据，仅保留核心功能描述。
+### 3.1 自动化指令优化 (Gemini 赋能)
+`generate_SKILL-md.sh` 脚本利用 Gemini CLI 的强大处理能力，根据 `doc/prompt.txt` 预设的专家角色和约束条件，对 `doc/SKILL.md` 进行语义层面的润色和结构优化。这种“指令工程自动化”能显著提升 AI Agent 在实际执行任务时的遵从度和响应质量。
 
-### 3.2 文档获取方式
-除了自动化脚本，本项目也保留了传统的批量获取方法作为补充：
-- **Wget 命令行**：
-  ```bash
-  # 递归下载指定系列的最新文档
-  wget -r -np -nH --cut-dirs=3 -A "*.zip" https://www.3gpp.org/ftp/Specs/latest/Rel-17/38_series/
-  ```
-- **第三方工具 (download_3gpp)**：
-  ```bash
-  pip install download_3gpp
-  download_3gpp --rel 16 --series 23
-  ```
+### 3.2 摘要自动化提取原理
+`3gpp_spec_scope_spider.py` 采用轻量化解析方案，无需安装大型 Office 组件：
+- **流式处理**：实时从 3GPP FTP 镜像获取最新协议包链接。
+- **内存解压**：直接在内存中处理 `.zip` 和 `.docx`（XML），极大减少了磁盘 IO 和处理时间。
+- **精准截取**：通过正则表达式在庞大的 XML 数据中快速定位 `1 Scope` 章节，确保提取的信息纯粹且高频。
 
 ---
-*更多详细信息请参阅 `doc/` 目录下的各项脚本指南及 `doc/SKILL.md` 描述文件。*
+*更多详细信息请参阅 `doc/` 目录下的各项脚本指南。*
