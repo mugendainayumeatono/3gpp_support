@@ -1,3 +1,5 @@
 .*
 !.gitignore
 __pycache__/
+3gpp_support/
+3gpp_support.skill
