@@ -9,7 +9,7 @@
 1.  **精准定位 (Discovery)**：
     运行 `3gpp_spec_scope_spider.py` 自动化提取协议摘要（Clause 1 Scope）。AI 分析摘要后锁定相关规格书编号。
 2.  **按需获取 (Retrieval)**：
-    调用 `download_3gpp_docs.py` 从官方镜像自动下载并解压对应的规格书正文。
+    根据定位出的编号，调用 `download_3gpp_docs.py` 从官方镜像自动下载并解压对应的规格书正文。
 3.  **智能合成 (Synthesis)**：
     AI 阅读规格书原文，过滤冗余信息，输出基于协议事实的回复，解决 AI 的“幻觉”问题。
 
@@ -64,7 +64,22 @@
 
 ## 4. 技术实现细节
 
-### 4.1 摘要自动化提取核心流程
+### 4.1 3GPP 文档结构与存储
+- **组织形式**：按系列（Series）组织，如 38 系列 (5G NR), 23 系列 (Architecture)。
+- **存储路径**：官方 FTP/HTTP 镜像 [https://www.3gpp.org/ftp/Specs/](https://www.3gpp.org/ftp/Specs/)。
+- **文件格式**：通常为 `.zip` 包，内含 `.doc` 或 `.docx` 文件。
+
+### 4.2 本地协议获取工具实现方法 (download_3gpp_docs.py)
+本项目采用自研的 Python 脚本实现协议的精准获取与处理，其核心方法如下：
+1.  **动态链接定位**：利用 `urllib.request` 获取 3GPP FTP 镜像的 HTML 索引，通过正则表达式 (`re`) 实时解析出符合特定 Release 和 Series 要求的最新 `.zip` 下载地址。
+2.  **多线程并发下载**：使用 `ThreadPoolExecutor` 构建线程池（默认 8 线程），通过并发执行提高大批量协议包的下载效率。
+3.  **内存级解压与转存**：下载的二进制流直接进入 `io.BytesIO` 缓冲区，利用 `zipfile` 模块在内存中完成解压，随后将提取出的 `.docx` 文件持久化到本地缓存目录。
+4.  **DOCX 结构化解析 (可选)**：
+    - 进一步解压 `.docx` 以读取其底层的 `word/document.xml`。
+    - 使用 `xml.etree.ElementTree` 遍历 XML 节点，通过样式属性（w:pStyle）和正则编号匹配（Heading Heuristics）识别章节标题。
+    - 将非结构化的文档内容按章节标题（Title）和段落（Content）拆分，最终导出为易于 AI 索引的 JSON 格式。
+
+### 4.3 摘要自动化提取核心流程 (Spider 实现)
 1.  **定位最新版本**：访问 3GPP 官方 FTP 的 `latest` 路径（如 `Rel-19/38_series`），获取所有协议的最新 `.zip` 包链接。
 2.  **内存解压与解析**：
     - 下载 `.zip` 包并在内存中解压出其中的 `.docx` 文档。
@@ -74,14 +89,11 @@
     - 通过正则匹配定位 `1 Scope` 章节的起始位置，并截取到 `2 References` 章节之前的内容。
 4.  **结构化存储**：将提取到的 Spec ID 与对应的 Scope 文本保存为 JSON 格式。
 
-### 4.2 自动化指令优化 (Gemini 赋能)
-`generate_SKILL-md.sh` 脚本利用 Gemini CLI，根据 `doc/prompt.txt` 预设的专家角色，对 `doc/SKILL.md` 进行语义层面的结构优化。这种“自动化指令工程”显著提升了 AI Agent 执行任务时的遵从度。
-
-### 4.3 摘要自动化提取原理 (Spider 实现)
-`3gpp_spec_scope_spider.py` 采用轻量化解析方案：
-- **流式处理**：实时从 3GPP FTP 镜像获取最新协议链接。
-- **内存解压**：直接在内存中处理压缩包，极大减少了磁盘 IO 损耗。
-- **精准截取**：利用正则表达式在 XML 中快速定位核心章节，确保信息的纯粹性。
+### 4.4 AI Agent Skill 打包与管理
+本项目提供了一套用于构建和管理 AI Agent Skill 的自动化脚本，其核心在于将静态的代码与动态生成的指令（SKILL.md）相结合。
+- **create_skill.sh**：负责创建标准目录结构，将核心脚本与 Markdown 指南归档并封装。
+- **自动化指令优化**：通过 `generate_SKILL-md.sh` 调用 Gemini CLI 润色 `SKILL.md`，显著提升 AI Agent 的遵从度。
+- **智能备份机制**：在重新生成 `SKILL.md` 时，自动保留最多 2 个历史版本以便快速回退。
 
 ---
 *更多详细信息请参阅 `doc/` 目录下的各项脚本指南。*
