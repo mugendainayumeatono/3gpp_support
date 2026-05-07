@@ -144,6 +144,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--threads", type=int, default=1)
     parser.add_argument("-r", "--release", type=str, help="Target Release (e.g., 19 or Rel-19)")
+    parser.add_argument("-o", "--output", type=str, help="Output directory or file path for the JSON report")
     args = parser.parse_args()
 
     num_threads = max(1, min(args.threads, MAX_THREAD_SAFE))
@@ -165,6 +166,12 @@ if __name__ == "__main__":
         print("\n[!] User aborted.")
 
     out_path = "resources/summary/38_series_full_report.json"
+    if args.output:
+        if args.output.endswith(".json"):
+            out_path = args.output
+        else:
+            out_path = os.path.join(args.output, "38_series_full_report.json")
+            
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(all_results, f, indent=4, ensure_ascii=False)
