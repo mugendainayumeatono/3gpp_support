@@ -21,18 +21,20 @@
 
 ### 2.1 打包 Skill
 使用 `create_skill.sh` 脚本进行打包：
-- **自动生成并打包 (默认/推荐)**：
+- **智能打包 (默认行为)**：
   ```bash
   ./create_skill.sh
   ```
-  在打包前会先自动调用 `generate_SKILL-md.sh` 重新生成 `SKILL.md`。该模式会自动保留最多 2 个历史备份（`SKILL.md.1` 和 `SKILL.md.2`），确保变更可追溯。
-- **跳过生成直接打包**：
+  脚本会自动检测 `doc/SKILL.md` 是否存在：
+  - 如果**不存在**：自动调用 `generate_SKILL-md.sh` 生成新文件。
+  - 如果**已存在**：直接使用现有文件，不再重复生成。
+- **强制重新生成并打包**：
   ```bash
-  ./create_skill.sh -s
+  ./create_skill.sh -g
   # 或
-  ./create_skill.sh --skip-gen
+  ./create_skill.sh --generate
   ```
-  直接使用现有的 `doc/SKILL.md` 指令文件完成打包，不再重新调用 Gemini 生成。
+  无论 `doc/SKILL.md` 是否存在，都会强制调用 Gemini 重新生成，并自动保留最多 2 个历史备份（`SKILL.md.1` 和 `SKILL.md.2`）。
 
 ### 2.2 自动化指令优化
 `generate_SKILL-md.sh` 脚本依赖 Gemini CLI，它会读取 `doc/prompt.txt` 中的优化策略，通过 AI 自动更新 `doc/SKILL.md`，使其描述更符合 AI Agent 的理解偏好。

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-GENERATE_SKILL=1
+FORCE_GENERATE=0
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -s|--skip-gen) GENERATE_SKILL=0; shift ;;
+        -g|--generate) FORCE_GENERATE=1; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
@@ -32,8 +32,17 @@ cp doc/3gpp_download_tool_guide.md "$SKILL_NAME/references/"
 cp doc/3gpp_scope_spider_guide.md "$SKILL_NAME/references/"
 
 # Handle SKILL.md
+GENERATE_SKILL=0
+if [ "$FORCE_GENERATE" -eq 1 ] || [ ! -f "doc/SKILL.md" ]; then
+    GENERATE_SKILL=1
+fi
+
 if [ "$GENERATE_SKILL" -eq 1 ]; then
-    echo "Generating new SKILL.md..."
+    if [ ! -f "doc/SKILL.md" ]; then
+        echo "doc/SKILL.md not found. Automatically generating..."
+    else
+        echo "Force regeneration flag detected. Generating new SKILL.md..."
+    fi
     
     # Keep up to 2 historical versions
     if [ -f "doc/SKILL.md" ]; then
@@ -49,11 +58,7 @@ if [ "$GENERATE_SKILL" -eq 1 ]; then
         exit 1
     fi
 else
-    echo "Using existing SKILL.md (skipping generation)..."
-    if [ ! -f "doc/SKILL.md" ]; then
-        echo "Error: doc/SKILL.md not found. Cannot skip generation if the file does not exist."
-        exit 1
-    fi
+    echo "Using existing SKILL.md (no regeneration needed)."
 fi
 
 # Copy the required SKILL.md file from doc folder
