@@ -37,7 +37,6 @@ python3 3gpp_spec_scope_spider.py -r 17 -t 20
 ```
 
 ## 4. 输出结果说明
-生成的报告保存在 `resources/summary/38_series_full_report.json`。
 
 **数据结构示例：**
 ```json
@@ -55,13 +54,8 @@ python3 3gpp_spec_scope_spider.py -r 17 -t 20
 ]
 ```
 
-## 5. 技术优势
-1.  **极速性能**：采用多线程并发，在 32 线程下，通常可在几分钟内处理完整个 Release 的数百份协议。
-2.  **零磁盘残留**：所有下载和解压过程均在内存（BytesIO）中完成，不会在本地留下大量的临时 zip 或 docx 文件。
-3.  **高容错性**：内置了针对网络超时、ZIP 损坏、XML 结构异常的处理机制。
-
-## 6. AI 使用提示 (Prompt Helper)
+## 5. AI 使用提示 (Prompt Helper)
 如果你是 AI Agent，可以利用此工具快速构建知识库索引：
 1.  **初始化索引**：运行 `python3 3gpp_spec_scope_spider.py -r 18 -t 32`。
-2.  **语义检索**：读取 `resources/summary/38_series_full_report.json`，通过匹配 `scope` 中的关键词，确定用户的问题应该去哪份具体协议中寻找答案。
+2.  **语义检索**：在输出结果中,通过匹配 `scope` 中的关键词，确定用户的问题应该去哪份具体协议中寻找答案。
 3.  **按需深挖**：在确定了 Spec ID（如 38.300）后，再调用 `download_3gpp_docs.py` 下载完整文档进行深入分析。

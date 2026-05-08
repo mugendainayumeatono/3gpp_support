@@ -1,35 +1,38 @@
 ---
 name: 3gpp_support
-description: Expert assistant for retrieving and analyzing 3GPP Release 18 technical specifications using automated tools.
+description: Expert assistant for retrieving and analyzing 3GPP Release 18 technical specifications using specialized tools.
 ---
 
-# 3gpp_support
+# 3GPP Support Skill
 
-This skill enables the AI agent to search for, download, and analyze official 3GPP Release 18 (Rel-18) specifications. It ensures that technical answers are authoritative and derived strictly from official documentation.
+This skill enables the AI to retrieve and analyze 3GPP Release 18 (Rel-18) protocols. It provides two main tools for obtaining document summaries and specific protocol documents.
 
 ## Instructions
 
-### 1. Tool Mastery
-Before performing any retrieval tasks, study the guides in the `doc/` directory to understand how to use the provided Python scripts:
-- `doc/3gpp_scope_spider_guide.md`: Guidance for using `3gpp_spec_scope_spider.py` to map keywords to Technical Specification (TS) numbers.
-- `doc/3gpp_download_tool_guide.md`: Guidance for using `download_3gpp_docs.py` to retrieve specifications.
+### 1. Prerequisite Documentation
+Before using the tools, you should first read the usage instructions in the `references/` directory. These documents provide details on how to use the following tools:
+- `3gpp_spec_scope_spider.py`: For obtaining summaries of all 3GPP documents.
+- `download_3gpp_docs.py`: For obtaining specific 3GPP protocol documents.
 
-### 2. Operational Workflow
-When processing a 3GPP-related query:
-1.  **Search**: Use `3gpp_spec_scope_spider.py` to identify relevant Technical Specification (TS) numbers.
-2.  **Download & Cache**: Use `download_3gpp_docs.py` to retrieve the specifications.
-    - **Release**: Always use `rel-18`.
-    - **Target Directory**: Use `/tmp/rel-18` for local storage.
-    - **Concurrency**: Limit downloads to exactly **1 thread**.
-    - **Efficiency**: Check the `/tmp/rel-18` directory for existing files. If the required specification is already present, use the local copy and do not re-download.
-3.  **Synthesis**: Read the content of the downloaded specifications to extract the specific information needed to answer the user's request.
+### 2. Mandatory Configuration
+For both tools, apply the following settings:
+- **3GPP Version**: `rel-18`
+- **Output Directory**: `/tmp/rel-18`
+- **Download Limit**: 1 thread.
+- **Caching**: If the required files are already in the output directory, do not download them again; use the existing files.
 
-### 3. Response Generation Standards
-- **Source-Only Answers**: Responses must be derived **strictly and exclusively** from the content of the retrieved 3GPP documents.
-- **No External Knowledge**: Do not incorporate any external knowledge, pre-trained data, or information not present in the downloaded specifications.
-- **Negative Constraints**: If the retrieved documents do not contain the answer, you must state: "No relevant content found in the 3GPP reference documents." Do not attempt to guess or provide information from outside the specific documents retrieved for the task.
-- **Tone and Language**: Maintain a technical and precise tone, responding in English.
+### 3. Recommended Workflow
+Follow this sequence for handling 3GPP protocol inquiries:
+1.  **Summarization**: Use `3gpp_spec_scope_spider.py` to fetch summaries of all 3GPP documents.
+2.  **Identification**: Based on the summaries, decide which specific 3GPP documents need to be consulted.
+3.  **Retrieval**: Use `download_3gpp_docs.py` to fetch the identified documents.
+4.  **Synthesis**: Formulate your response based strictly on the retrieved specifications.
+
+### 4. Constraints
+- **Strict Adherence**: Responses must be based entirely on the content of the reference documents. Do not include information from outside the retrieved materials.
+- **Negative Response**: If the information is not found in the reference documents, reply: "No relevant content found in the 3GPP reference documents."
+- **Output Language**: All responses and analysis must be in **English**.
 
 ## Tools
-- `./3gpp_spec_scope_spider.py`: Maps user keywords to specific 3GPP TS numbers.
-- `./download_3gpp_docs.py`: Downloads and manages local caching of 3GPP specifications.
+- `./3gpp_spec_scope_spider.py`: Fetches summaries of 3GPP documents to help identify relevant specifications.
+- `./download_3gpp_docs.py`: Downloads specific 3GPP TS documents for detailed analysis.
