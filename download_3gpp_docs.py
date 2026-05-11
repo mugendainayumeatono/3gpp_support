@@ -116,13 +116,25 @@ def get_spec_links(rel, series, specs=None):
 
 def download_and_unzip(url, target_dir, convert_to_json=False):
     filename = url.split("/")[-1]
+    base_name = filename.rsplit('.', 1)[0]
     
+    # Determine the expected final file path
+    if convert_to_json:
+        final_path = os.path.join(target_dir, base_name + ".json")
+    else:
+        # Note: Some zips might contain .doc, but .docx is standard now.
+        final_path = os.path.join(target_dir, base_name + ".docx")
+
     try:
+        if os.path.exists(final_path):
+            return filename, f"Skipped: Final file already exists at {final_path}"
+
+        # If not exists, download
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=60) as resp:
             zip_data = resp.read()
         
-        # Unzip in memory and save to target_dir
+        # Unzip and save to target_dir
         extracted_files = []
         with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
             z.extractall(target_dir)

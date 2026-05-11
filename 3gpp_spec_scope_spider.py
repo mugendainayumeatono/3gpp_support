@@ -153,17 +153,53 @@ if __name__ == "__main__":
         print("[!] Error: No specifications found.")
         sys.exit(1)
         
-    print(f"[*] Task: Extracting {len(spec_urls)} abstracts from {rel_id} (Threads: {num_threads})")
-    task_tracker = {'completed': 0, 'lock': Lock()}
+    out_path = "resources/summary/38_series_full_report.json"
+    if args.output:
+        if args.output.endswith(".json"):
+            out_path = args.output
+        else:
+            out_path = os.path.join(args.output, "38_series_full_report.json")
+            
+    # Load existing results to skip already processed specs
     all_results = []
+    processed_specs = set()
+    if os.path.exists(out_path):
+        try:
+            with open(out_path, "r", encoding="utf-8") as f:
+                all_results = json.load(f)
+                processed_specs = {item['spec'] for item in all_results if item.get('status') == 'success'}
+                print(f"[*] Found existing report with {len(processed_specs)} entries. Skipping them.")
+        except Exception as e:
+            print(f"[!] Warning: Could not read existing report: {e}")
+
+    # Filter spec_urls
+    filtered_urls = []
+    for url in spec_urls:
+        match = re.search(r'(38\.\d+|38\d{3})', url)
+        spec_id = match.group(1) if match else None
+        if spec_id and spec_id in processed_specs:
+            continue
+        filtered_urls.append(url)
+
+    if not filtered_urls:
+        print("[*] All specifications are already processed in the existing report.")
+        sys.exit(0)
+
+    print(f"[*] Task: Extracting {len(filtered_urls)} abstracts from {rel_id} (Threads: {num_threads})")
+    task_tracker = {'completed': 0, 'lock': Lock()}
     
     try:
         with ThreadPoolExecutor(max_workers=num_threads) as pool:
-            futures = [pool.submit(process_spec_zip, url, len(spec_urls), task_tracker) for url in spec_urls]
+            futures = [pool.submit(process_spec_zip, url, len(filtered_urls), task_tracker) for url in filtered_urls]
             for f in as_completed(futures):
                 all_results.append(f.result())
     except KeyboardInterrupt:
         print("\n[!] User aborted.")
+            
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(all_results, f, indent=4, ensure_ascii=False)
+    print(f"\n\n[*] Completed. Report: {out_path}")
 
     out_path = "resources/summary/38_series_full_report.json"
     if args.output:
